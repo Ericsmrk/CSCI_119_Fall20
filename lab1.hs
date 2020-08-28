@@ -1,4 +1,6 @@
+---- Eric Smrkovsky ----
 ---- CSci 119, Lab 1 ----
+---- CSUFresno, Fall 2020 ----
 
 -- Note: you will replace all instances of "undefined" below with your answers.
 
