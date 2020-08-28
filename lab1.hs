@@ -1,6 +1,4 @@
----- Eric Smrkovsky ----
 ---- CSci 119, Lab 1 ----
----- CSUFresno, Fall 2020 ----
 
 -- Note: you will replace all instances of "undefined" below with your answers.
 
@@ -44,9 +42,9 @@ comm_imp = and [(p <= q) == (q <= p) | p <- bools, q <- bools]
 -- Your solutions to the problems below should work no matter what
 -- finite list of integers u is. For example, u = [5, 2, 17, 58, 21].
 
-u = [1..3]
+--u = [1..3]
 --u = [5, 2, 17, 58, 21]
---u = [5, 10, 15]
+u = [1,2]
 
 -- Translate each of the following statements first, in a comment, into a
 -- logical statement involving forall, exists, and, or, imp, and not,
