@@ -1,7 +1,9 @@
 ---- CSci 119, Lab 1 ----
+--Eric Smrkovsky
+--CSU Fresno
+--8/29/2020
 
 -- Note: you will replace all instances of "undefined" below with your answers.
-
 
 ---- Boolean operators
 
@@ -42,9 +44,7 @@ comm_imp = and [(p <= q) == (q <= p) | p <- bools, q <- bools]
 -- Your solutions to the problems below should work no matter what
 -- finite list of integers u is. For example, u = [5, 2, 17, 58, 21].
 
---u = [1..3]
---u = [5, 2, 17, 58, 21]
-u = [1,2]
+u = [1..8]
 
 -- Translate each of the following statements first, in a comment, into a
 -- logical statement involving forall, exists, and, or, imp, and not,
@@ -93,5 +93,5 @@ prob9 = or [and [x >= y | y <- u] | x <- u]
 
 -- 10. For every number, there is a different number such that there are no
 --    numbers between these two.
--- A: forall y, exists x, x /= y, forall z, if x < y then (not!?) x < z and z < y else y < z and z < x
+-- A: forall y, exists x, x /= y, forall z, if x < y then not x < z and z < y else not y < z and z < x
 prob10 = and [or [and [not((x < z && z < y) || (y < z && z < x)) | z <- u] | x <- u, x /= y] | y <- u]
