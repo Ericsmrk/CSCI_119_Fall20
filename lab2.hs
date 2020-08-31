@@ -66,11 +66,11 @@ rst_test = refl rst && symm rst && trans rst
 -- refl, symm, not trans
 rst' :: Reln
 rst' = undefined
-rst'_test = undefined
+--rst'_test = refl rst && symm rst && not trans rst
 
 -- refl, not symm, trans
 rs't :: Reln
-rs't = undefined
+rs't = [(x,y)|x<-u,y<-u,x/=y]
 rs't_test = undefined
 
 -- refl, not symm, not trans
@@ -90,8 +90,8 @@ r'st'_test = undefined
 
 -- not refl, not symm, trans
 r's't :: Reln
-r's't = undefined
-r's't_test = undefined
+r's't =  [(x,y)|x<-u,y<-u,x<y]
+r's't_test = not (refl r's't && symm r's't) && trans r's't
 
 -- not refl, not symm, not trans
 r's't' :: Reln
