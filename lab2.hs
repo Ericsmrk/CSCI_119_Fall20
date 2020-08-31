@@ -9,14 +9,14 @@ u = [1..8]
 
 -- A relation, R, on U is a list of the ordered pairs of elements of U:
 type Reln = [(Int,Int)]
-              
+
 -- For example, here are the < and <= relations
 less_reln :: Reln
 less_reln = [(i,j) | i <- u, j <- u, i < j]
 
 leq_reln :: Reln
 leq_reln  = [(i,j) | i <- u, j <- u, i <= j]
-            
+
 -- and here is the relation of equivalence mod 3:
 eqmod3_reln :: Reln
 eqmod3_reln = [(i,j) | i <- u, j <- u, (j - i) `mod` 3 == 0]
@@ -27,7 +27,7 @@ eqmod3_reln = [(i,j) | i <- u, j <- u, (j - i) `mod` 3 == 0]
 -- Example: [(i,i) | i <- u] is the smallest reflexive relation over u.
 -- Anything that does not contain all of these 8 elements is not reflexive.
 refl :: Reln -> Bool
-refl rs = undefined
+refl rs = and[x == x | x <- u, (u,u)]
 
 -- Write a function symm that tests whether a relation is symmetric:
 -- R is symmetric if: forall a b, (a,b) in R -> (b,a) in R
