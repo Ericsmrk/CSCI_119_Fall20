@@ -24,26 +24,29 @@ eqmod3_reln = [(i,j) | i <- u, j <- u, (j - i) `mod` 3 == 0]
 
 -- Write a function refl that tests whether a relation is reflexive:
 -- R is reflexive if: forall a, (a,a) in R
+rs = [(i,i) | i <- u]
 -- Example: [(i,i) | i <- u] is the smallest reflexive relation over u.
 -- Anything that does not contain all of these 8 elements is not reflexive.
 refl :: Reln -> Bool
-refl rs = and[x == x | x <- u, (u,u)]
+refl rs = and[(x,x) `elem` rs | x <- u]
 
 -- Write a function symm that tests whether a relation is symmetric:
 -- R is symmetric if: forall a b, (a,b) in R -> (b,a) in R
 -- Example: [(1,1), (1,2), (2,1)] is symmetric but [(1,1), (1,2)] is not.
 symm :: Reln -> Bool
-symm rs = undefined
+symm rs = and [((x, y) `elem` rs) <= ((y, x) `elem` rs) | y <- u, x <- u]
 
 -- Write a function trans that tests whether a relation is transitive:
 -- R is transistive if: forall a b c, ((a,b) in R /\ (b,c) in R) -> (a,c) in R
 -- Example: [(1,2),(2,3),(1,3),(4,4)] is transitive but [(2,3),(3,2)] is not
 trans :: Reln -> Bool
-trans rs = undefined
+trans rs = and [((x, y) `elem` rs && (y, z) `elem` rs) <= ((y, z) `elem` rs) | x <- u, y <- u, z <- u]
 
 
 -- Use the functions above to check the less, leq, and eqmod3 relations for
--- relexivity, symmetry, and transitivity.
+-- reflexivity, symmetry, and transitivity.
+
+--NOTE: checked all three and all were correct when matched to the table in the lecture.
 
 
 ----- PART 2:  Finding minimal relations with combinations of properties -----
