@@ -22,9 +22,11 @@ eqmod3_reln :: Reln
 eqmod3_reln = [(i,j) | i <- u, j <- u, (j - i) `mod` 3 == 0]
 
 
+l1 = [(i,i) | i <- u]
+l2 = [(1,2),(2,3),(1,3),(4,4)] :: [(Int,Int)]
+l3 = [(2,3),(3,2)] :: [(Int,Int)]
 -- Write a function refl that tests whether a relation is reflexive:
 -- R is reflexive if: forall a, (a,a) in R
-rs = [(i,i) | i <- u]
 -- Example: [(i,i) | i <- u] is the smallest reflexive relation over u.
 -- Anything that does not contain all of these 8 elements is not reflexive.
 refl :: Reln -> Bool
@@ -34,14 +36,13 @@ refl rs = and[(x,x) `elem` rs | x <- u]
 -- R is symmetric if: forall a b, (a,b) in R -> (b,a) in R
 -- Example: [(1,1), (1,2), (2,1)] is symmetric but [(1,1), (1,2)] is not.
 symm :: Reln -> Bool
-symm rs = and [((x, y) `elem` rs) <= ((y, x) `elem` rs) | y <- u, x <- u]
+symm rs = and [((x, y) `elem` rs) <= ((y, x) `elem` rs) | (x,y) <- rs]
 
 -- Write a function trans that tests whether a relation is transitive:
 -- R is transistive if: forall a b c, ((a,b) in R /\ (b,c) in R) -> (a,c) in R
 -- Example: [(1,2),(2,3),(1,3),(4,4)] is transitive but [(2,3),(3,2)] is not
 trans :: Reln -> Bool
-trans rs = and [((x, y) `elem` rs && (y, z) `elem` rs) <= ((y, z) `elem` rs) | x <- u, y <- u, z <- u]
-
+trans rs = and [(x, z) `elem` rs | (x, y1) <- rs, (y2, z) <- rs, y1 == y2]
 
 -- Use the functions above to check the less, leq, and eqmod3 relations for
 -- reflexivity, symmetry, and transitivity.
@@ -65,38 +66,38 @@ rst_test = refl rst && symm rst && trans rst
 
 -- refl, symm, not trans
 rst' :: Reln
-rst' = undefined
---rst'_test = refl rst && symm rst && not trans rst
+rst' = rst ++ [(1,2), (2,1), (1,8), (8,1)]
+rst'_test = refl rst' && symm rst' && not (trans rst')
 
 -- refl, not symm, trans
 rs't :: Reln
-rs't = [(x,y)|x<-u,y<-u,x/=y]
-rs't_test = undefined
+rs't = rst ++ [(1,2)]
+rs't_test = refl rs't && not (symm rs't) && trans rs't
 
 -- refl, not symm, not trans
 rs't' :: Reln
-rs't' = undefined
-rs't'_test = undefined
+rs't' = rst ++ [(1,2),(2,4)]
+rs't'_test = refl rs't' && not (symm rs't' && trans rs't')
 
 -- not refl, symm, trans
 r'st :: Reln
-r'st = undefined
-r'st_test = undefined
+r'st = [(1,1)]
+r'st_test = not (refl r'st) && symm r'st && trans r'st
 
 -- not refl, symm, not trans
 r'st' :: Reln
-r'st' = undefined
-r'st'_test = undefined
+r'st' = [(1,2),(2,1)]
+r'st'_test = not (refl r'st') && symm r'st' && not (trans r'st')
 
 -- not refl, not symm, trans
 r's't :: Reln
-r's't =  [(x,y)|x<-u,y<-u,x<y]
+r's't =  [(1,2),(2,8),(1,8)]
 r's't_test = not (refl r's't && symm r's't) && trans r's't
 
 -- not refl, not symm, not trans
 r's't' :: Reln
-r's't' = undefined
-r's't'_test = undefined
+r's't' = [(1,2),(2,3)]
+r's't'_test = not (refl r's't' && symm r's't' && trans r's't')
 
 
 ---- PART 3: Partitions of u -----
@@ -111,6 +112,15 @@ r's't'_test = undefined
 -- disjoint:   forall X,Y in P (exists a, a in X /\ a in Y) -> X = Y,
 --             equivalently, forall X,Y in P, X /= Y -> X intersect Y = {}
 
+nontrivial :: [[Int]] -> Bool
+nontrivial ls = or [and [x/= [] | x <- ls] | x <- u]
+
+total :: [[Int]] -> Bool
+total ls = and [or [x `elem` l | l <- ls] | x <- u]
+
+disjoint :: [[Int]] -> Bool
+disjoint = undefined
+
 -- For example, here is the partitition of u = [1..8] corresponding to eqmod3_reln:
 eqmod3_part :: [[Int]]
 eqmod3_part = [[1,4,7], [2,5,8], [3,6]]
@@ -118,7 +128,6 @@ eqmod3_part = [[1,4,7], [2,5,8], [3,6]]
 -- Write a function, part, that tests whether a list of lists is a partition of u
 part :: [[Int]] -> Bool
 part bs = undefined
-
 
 -- Write a function eq2part that takes an equivalence relation on u as input
 -- and returns the associated partition of u. You can assume that the input is
@@ -131,4 +140,4 @@ eq2part rs = undefined
 -- the associated equivalence relation on u. You can assume that the argument
 -- is really a partition of u.
 part2eq :: [[Int]] -> Reln
-part2eq bs = undefined
+part2eq bs = [(x,y) | r <- bs, x <- r, y <- r]
