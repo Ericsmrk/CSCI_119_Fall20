@@ -112,14 +112,15 @@ r's't'_test = not (refl r's't' && symm r's't' && trans r's't')
 -- disjoint:   forall X,Y in P (exists a, a in X /\ a in Y) -> X = Y,
 --             equivalently, forall X,Y in P, X /= Y -> X intersect Y = {}
 
+-- helper functions
 nontrivial :: [[Int]] -> Bool
-nontrivial ls = or [and [x/= [] | x <- ls] | x <- u]
+nontrivial ls = or [and [x /= [] | x <- ls] | x <- u]
 
 total :: [[Int]] -> Bool
 total ls = and [or [x `elem` l | l <- ls] | x <- u]
 
 disjoint :: [[Int]] -> Bool
-disjoint = undefined
+disjoint ls = and [a /= b| x <- ls, y <- ls, a <- x, b <- y, x/=y]
 
 -- For example, here is the partitition of u = [1..8] corresponding to eqmod3_reln:
 eqmod3_part :: [[Int]]
@@ -127,17 +128,21 @@ eqmod3_part = [[1,4,7], [2,5,8], [3,6]]
 
 -- Write a function, part, that tests whether a list of lists is a partition of u
 part :: [[Int]] -> Bool
-part bs = undefined
+part bs = nontrivial bs && total bs && disjoint bs
 
 -- Write a function eq2part that takes an equivalence relation on u as input
 -- and returns the associated partition of u. You can assume that the input is
 -- really an equivalence relation on u.
+
 eq2part :: Reln -> [[Int]]
-eq2part rs = undefined
+eq2part rs = help u where
+  help :: [Int] -> [[Int]]
+  help [] = []
+  help (x:xs) = let h = [y | (x1,y) <- rs, x == x1]
+                in h : help [x | x <- xs, x `notElem` h]
 
 
 -- Write a function part2eq that takes a partition of u as input and returns
 -- the associated equivalence relation on u. You can assume that the argument
 -- is really a partition of u.
-part2eq :: [[Int]] -> Reln
 part2eq bs = [(x,y) | r <- bs, x <- r, y <- r]
