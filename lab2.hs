@@ -1,5 +1,7 @@
 ---- CSci 119, Fall 2020, Lab 2 ----
-
+--Eric Smrkovsky
+--CSU Fresno
+--9/9/2020
 
 ----- PART 1:  Testing properties of relations -----
 
@@ -30,7 +32,7 @@ l3 = [(2,3),(3,2)] :: [(Int,Int)]
 -- Example: [(i,i) | i <- u] is the smallest reflexive relation over u.
 -- Anything that does not contain all of these 8 elements is not reflexive.
 refl :: Reln -> Bool
-refl rs = and[(x,x) `elem` rs | x <- u]
+refl rs = and [(x,x) `elem` rs | x <- u]
 
 -- Write a function symm that tests whether a relation is symmetric:
 -- R is symmetric if: forall a b, (a,b) in R -> (b,a) in R
