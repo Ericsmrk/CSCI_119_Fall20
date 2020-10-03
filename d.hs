@@ -176,103 +176,18 @@ c = toRE "ab."
 s = toRE "a*"
 empty :: RegExp -> Bool
 empty Empty = True
-empty (Let a) = False
+empty (Let 'a') = False
 empty (Union r1 r2) = empty r1 && empty r2
-empty (Cat r1 r2) = empty r1 || empty r2
 empty (Star r) = False
+empty (Cat r1 r2) = empty r1 || empty r2
 
-unitary :: RegExp -> Bool
-unitary Empty = False
-unitary (Let a) = False
-unitary (Union r1 r2) = (unitary r1 && empty r2) || (empty r1 && unitary r2)
-                        || (unitary r1 && unitary r2)
-unitary (Cat r1 r2) = unitary r1 && unitary r2
-unitary (Star r) = empty r || unitary r
 
-byp :: RegExp -> Bool
-byp Empty = False
-byp (Let a) = False
-byp (Union r1 r2) = byp r1 || byp r2
-byp (Cat r1 r2) = byp r1 && byp r2
-byp (Star r) = True
+-- unitary covered
+-- bypass covered
+-- rever covered a little
+--
 
-inf :: RegExp -> Bool
-inf Empty = False
-inf (Let a) = False
-inf (Union r1 r2) = inf r1 || inf r2
-inf (Cat r1 r2) = (inf r1 && not (empty r2)) || (inf r2 && not (empty r1))
-inf (Star r) = not (empty r && unitary r)
 
-rever :: RegExp -> RegExp
-rever Empty = Empty
-rever (Let a) = Let a
-rever (Union r1 r2) = Union (rever r1) (rever r2)
-rever (Cat r1 r2) = Cat (rever r2) (rever r1)
-rever (Star r) = Star (rever r)
-
-lq :: Char -> RegExp -> RegExp
-lq s Empty = Empty
-lq s (Let a) = if (s == a) then Star Empty else Empty
-lq s (Union r1 r2) = Union (lq s r1) (lq s r2)
-lq s (Cat r1 r2) = let c = (Cat (lq s r1) r2) in
-                   if byp r1 then Union c (lq s r2) else c
-lq s (Star r) = (Cat (lq s r) (Star r))
-
-nep :: RegExp -> RegExp
-nep Empty = Empty
-nep (Let a) = Let a
-nep (Union r1 r2) = Union (nep r1) (nep r2)
-nep (Cat r1 r2) = let c = (Cat (nep r1) r2) in
-                  if (byp r1) then (Union c (nep r2)) else c
-nep (Star r) = Cat (nep r) (Star r)
-
--- *Main> (match1 Empty "") == (memb (lol "") (lang []))
--- True
--- *Main> match1 (Let 'a') "a"
--- True
--- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["a"]))
--- True
--- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["ab"]))
--- False
--- *Main> match1 (Let 'a') "ba"
--- False
--- *Main> match1 (Let 'a') ""
--- False
--- *Main> match1 (toRE "a") "a"
--- True
--- *Main> match1 (toRE "ab+a+b+") "a"
--- True
--- *Main> match1 (toRE "ab+a+b+") "c"
--- False
--- *Main> match1 (toRE "ab+a+b+") "b"
--- True
--- *Main> match1 (toRE "ab+a+b+") ""
--- False
--- *Main> match1 (toRE "ab.c.") "ab"
--- False
--- *Main> match1 (toRE "a*") "a"
--- True
--- *Main> match1 (toRE "a*") "aa"
--- True
--- *Main> match1 (toRE "a*") "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
--- True
--- *Main> match1 (toRE "a*b*.") ""
--- True
--- *Main> match1 (toRE "") ""
--- *** Exception: lab4.hs:(69,3)-(74,43): Non-exhaustive patterns in function go
-
--- *Main> match1 (toRE "a*b*.") "ababababababababa"
--- False
--- *Main> match1 (toRE "a*b*.") "ab"
--- True
--- *Main> match1 (toRE "a*b*.") "abb"
--- True
--- *Main> match1 (toRE "aa.bb.+ab.a.b.+ab.b.a.+ba.b.a.+ba.a.b.+*") "bbababaa"
--- True
--- *Main> match1 (q1) "bbababaa"
--- False
--- *Main> match1 (q8) "bbababaa"
--- True
 
 ---------------- Part 2 ----------------
 
@@ -282,23 +197,14 @@ nep (Star r) = Cat (nep r) (Star r)
 
 -- splits xs = list of all possible splits of xs, in order. For example,
 -- splits "abc" = [("","abc"), ("a","bc"), ("ab","c"), ("abc","")]
--- EX: *Main> [(take 0 x, drop 0 x),(take 1 x, drop 1 x),(take 2 x, drop 2 x)
--- EX: ,(take 3 x, drop 3 x)]
-
 splits :: [a] -> [([a], [a])]
-splits xs = [(t,d) | l <- [0 .. length xs], let t = take l xs, let d = drop l xs]
+splits xs = undefined
+--covered
+
 
 match1 :: RegExp -> String -> Bool
-match1 Empty _ = False
-match1 (Let a) w = [a] == w
-match1 (Union r1 r2) w = match1 r1 w || match1 r2 w
-match1 (Cat r1 r2) w = or [match1 r1 w1 && match1 r2 w2 | (w1 , w2) <- splits w]
-match1 (Star r) w = let (x:ws) = splits w in
-                    w == [] ||
-                    or [match1 r w1 && match1 (Star r) w2 | (w1 , w2) <- ws]
-
-
-
+match1 r w = undefined
+--covered
 
 match2 :: RegExp -> String -> Bool
 match2 r w = undefined
@@ -334,184 +240,3 @@ bb1  = toRE "aba.+*b.b.aab.+*."   -- contains bb exactly once
 -- All strings on sigma of length <= n (useful for testing)
 strings :: Int -> [String]
 strings n = concat $ [replicateM i sigma | i <- [0..n]]
-
----- testing ----
--- *Main> e
--- Empty
--- *Main> l
--- Let 'a'
--- *Main> u
--- Union (Let 'a') (Let 'b')
--- *Main> c
--- Cat (Let 'a') (Let 'b')
--- *Main> s
--- Star (Let 'a')
-
--- *Main> empty e
--- True
--- *Main> empty l
--- False
--- *Main> empty u
--- False
--- *Main> empty c
--- False
--- *Main> empty s
--- False
-
--- *Main> unitary u
--- False
--- *Main> unitary e
--- False
--- *Main> unitary l
--- False
--- *Main> unitary c
--- False
--- *Main> unitary s
--- False
--- *Main> unitary (toRE "@*")
--- True
--- *Main> unitary (toRE "@*a.")
--- False
--- *Main> unitary (toRE "@a+")
--- False
--- *Main> unitary (toRE "@@+")
--- False
--- *Main> unitary (toRE "@*@*+")
--- True
-
--- *Main> byp e
--- False
--- *Main> byp l
--- False
--- *Main> byp u
--- False
--- *Main> byp c
--- False
--- *Main> byp s
--- True
--- *Main> byp (toRE "ab+")
--- False
--- *Main> byp (toRE "a@+")
--- False
--- *Main> byp (toRE "as*+")
--- True
--- *Main> byp (toRE "as*.")
--- False
--- *Main> byp (toRE "a*s*.")
--- True
-
--- *Main> inf e
--- False
--- *Main> inf l
--- False
--- *Main> inf u
--- False
--- *Main> inf c
--- False
--- *Main> inf s
--- True
--- *Main> inf (toRE "a*")
--- True
--- *Main> inf (toRE "a*b*+")
--- True
--- *Main> inf (toRE "ab+")
--- False
--- *Main> inf (toRE "a*b+")
--- True
--- *Main> inf (toRE "a*@+")
--- True
--- *Main> inf (toRE "a@+")
--- False
-
--- *Main> rever e
--- Empty
--- *Main> rever l
--- Let 'a'
--- *Main> rever u
--- Union (Let 'a') (Let 'b')
--- *Main> rever c
--- Cat (Let 'b') (Let 'a')
--- *Main> rever s
--- Star (Let 'a')
--- *Main> q1
--- Star (Union (Star (Let 'b')) (Star (Cat (Cat (Let 'a') (Let 'b')) (Let 'b'))))
--- *Main> rever q1
--- Star (Union (Star (Let 'b')) (Star (Cat (Let 'b') (Cat (Let 'b') (Let 'a')))))
--- *Main> q3
--- Cat (Cat (Union (Cat (Star (Let 'a')) (Star (Let 'b'))) (Cat (Star (Let 'b'))
--- (Star (Let 'a')))) (Union (Cat (Let 'a') (Let 'b')) (Cat (Let 'b') (Let 'a'))))
--- (Union (Cat (Star (Let 'a')) (Star (Let 'b'))) (Cat (Star (Let 'b'))
--- (Star (Let 'a'))))
--- *Main> rever q3
--- Cat (Union (Cat (Star (Let 'b')) (Star (Let 'a'))) (Cat (Star (Let 'a'))
--- (Star (Let 'b')))) (Cat (Union (Cat (Let 'b') (Let 'a'))
--- (Cat (Let 'a') (Let 'b'))) (Union (Cat (Star (Let 'b')) (Star (Let 'a')))
--- (Cat (Star (Let 'a')) (Star (Let 'b')))))
--- *Main> Compact q3
--- (a*b*+b*a*)(ab+ba)(a*b*+b*a*)
--- *Main> rever q3
--- Cat (Union (Cat (Star (Let 'b')) (Star (Let 'a'))) (Cat (Star (Let 'a'))
--- (Star (Let 'b')))) (Cat (Union (Cat (Let 'b') (Let 'a'))
--- (Cat (Let 'a') (Let 'b'))) (Union (Cat (Star (Let 'b')) (Star (Let 'a')))
--- (Cat (Star (Let 'a')) (Star (Let 'b')))))
--- *Main> Compact it
--- (b*a*+a*b*)(ba+ab)(b*a*+a*b*)
-
--- *Main> leftq (lol "a") [(lol "a")]
--- [""]
--- *Main> leftq (lol "a") [(lol "d")]
--- []
--- *Main> lq 'a' (toRE "a")
--- Star Empty
--- *Main> lq 'a' (toRE "b")
--- Empty
--- *Main> un = toRE "ab+"
--- *Main> un
--- Union (Let 'a') (Let 'b')
--- *Main> lq 'a' un
--- Union (Star Empty) Empty
--- *Main> lq 'b' un
--- Union Empty (Star Empty)
--- *Main> lq 'c' un
--- Union Empty Empty
--- *Main> c = toRE "ab.c.d.e."
--- *Main> Compact c
--- abcde
--- *Main> lq 'a' c
--- Cat (Cat (Cat (Cat (Star Empty) (Let 'b')) (Let 'c')) (Let 'd')) (Let 'e')
--- *Main> Compact it
--- @*bcde
-
--- *Main> nep e
--- Empty
--- *Main> nep l
--- Let 'a'
--- *Main> nep u
--- Union (Let 'a') (Let 'b')
--- *Main> nep c
--- Cat (Let 'a') (Let 'b')
--- *Main> nep s
--- Cat (Let 'a') (Star (Let 'a'))
--- *Main> toRE "@a+b+"
--- Union (Union Empty (Let 'a')) (Let 'b')
--- *Main> nep it
--- Union (Union Empty (Let 'a')) (Let 'b')
--- *Main> toRE "@*a+b+"
--- Union (Union (Star Empty) (Let 'a')) (Let 'b')
--- *Main> nep it
--- Union (Union (Cat Empty (Star Empty)) (Let 'a')) (Let 'b')
--- *Main> Compact it
--- @@*+a+b
-
--- *Main> splits ""
--- [("","")]
--- *Main> splits "a"
--- [("","a"),("a","")]
--- *Main> splits "ab"
--- [("","ab"),("a","b"),("ab","")]
--- *Main> splits "abc"
--- [("","abc"),("a","bc"),("ab","c"),("abc","")]
--- *Main> splits (take 5 (lang_of q7))
--- [([],["","a","b","aa","ab"]),([""],["a","b","aa","ab"]),
--- (["","a"],["b","aa","ab"]),(["","a","b"],["aa","ab"]),(["","a","b","aa"],["ab"])
--- ,(["","a","b","aa","ab"],[])]

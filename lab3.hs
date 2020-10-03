@@ -88,11 +88,6 @@ cat :: Ord a => Lang a -> Lang a -> Lang a
 cat xs [] = []
 cat [] ys = []
 cat (x:xs) ys =  merge (map (dot x) ys) (cat xs ys)
--- {a,ab, .. } {empty, b, ...}   = ab, ab  (this bad no dups!) (order!)
-
-l = lang ["a", "ab", "abc", "k"]
-l2 = lang ["", "k"]
-l3 = lang ["a"]
 
 -- Kleene star of languages
 kstar :: Ord a => Lang a -> Lang a
@@ -107,8 +102,6 @@ leftq a [] = []
 leftq (LOL x a1) (LOL y a2:ys) = case stripPrefix a1 a2 of
                                  Nothing -> leftq (LOL x a1) ys
                                  Just a3 -> lol a3 : leftq (LOL x a1) ys
-
-
 
 ---- Regular expressions and the languages they denote
 data RegExp = Empty                -- Empty language
@@ -155,7 +148,6 @@ lang_of (Union r1 r2) = merge (lang_of r1) (lang_of r2)
 lang_of (Cat r1 r2) = cat (lang_of r1) (lang_of r2)
 lang_of (Star r1) = kstar (lang_of r1)
 
-
 -- The one-string and finite languages of Theorem 3.2. It should be the case
 -- that, for any string w, lang_of (onestr w) == [w], and for any (finite) list
 -- of (distinct, sorted) strings l, lang_of (finite l) == l.
@@ -165,7 +157,7 @@ onestr [x] = Let x
 onestr (x:xs) = Cat (Let x) (onestr xs)
 
 finite :: [String] -> RegExp
-finite [] = Star Empty
+finite [] = Empty
 finite [x] = onestr x
 finite (x:xs) = Union (onestr x) (finite xs)
 
