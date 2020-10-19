@@ -1,8 +1,9 @@
 -- CSci 119, Lab 4
+-- Eric Smrkovsky
+-- 10/4/2020
 
 import Data.List (sort, stripPrefix) -- for your solution to Lab 3
 import Control.Monad (replicateM)    -- for strings function at the end
-
 
 ---------------- Code provided to you in Lab 3 ----------------
 
@@ -226,54 +227,6 @@ nep (Cat r1 r2) = let c = (Cat (nep r1) r2) in
                   if (byp r1) then (Union c (nep r2)) else c
 nep (Star r) = Cat (nep r) (Star r)
 
--- *Main> (match1 Empty "") == (memb (lol "") (lang []))
--- True
--- *Main> match1 (Let 'a') "a"
--- True
--- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["a"]))
--- True
--- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["ab"]))
--- False
--- *Main> match1 (Let 'a') "ba"
--- False
--- *Main> match1 (Let 'a') ""
--- False
--- *Main> match1 (toRE "a") "a"
--- True
--- *Main> match1 (toRE "ab+a+b+") "a"
--- True
--- *Main> match1 (toRE "ab+a+b+") "c"
--- False
--- *Main> match1 (toRE "ab+a+b+") "b"
--- True
--- *Main> match1 (toRE "ab+a+b+") ""
--- False
--- *Main> match1 (toRE "ab.c.") "ab"
--- False
--- *Main> match1 (toRE "a*") "a"
--- True
--- *Main> match1 (toRE "a*") "aa"
--- True
--- *Main> match1 (toRE "a*") "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
--- True
--- *Main> match1 (toRE "a*b*.") ""
--- True
--- *Main> match1 (toRE "") ""
--- *** Exception: lab4.hs:(69,3)-(74,43): Non-exhaustive patterns in function go
-
--- *Main> match1 (toRE "a*b*.") "ababababababababa"
--- False
--- *Main> match1 (toRE "a*b*.") "ab"
--- True
--- *Main> match1 (toRE "a*b*.") "abb"
--- True
--- *Main> match1 (toRE "aa.bb.+ab.a.b.+ab.b.a.+ba.b.a.+ba.a.b.+*") "bbababaa"
--- True
--- *Main> match1 (q1) "bbababaa"
--- False
--- *Main> match1 (q8) "bbababaa"
--- True
-
 ---------------- Part 2 ----------------
 
 -- Implement the two matching algorithms given in Section 3.4 of the notes,
@@ -297,19 +250,23 @@ match1 (Star r) w = let (x:ws) = splits w in
                     w == [] ||
                     or [match1 r w1 && match1 (Star r) w2 | (w1 , w2) <- ws]
 
-
-
-
 match2 :: RegExp -> String -> Bool
-match2 r w = undefined
-
+match2 r w = m [r] w where
+  m :: [RegExp] -> String -> Bool
+  m [] w = w == []
+  m (Empty:rs) w = False
+  m (Let a:rs) "" = False -- to prevent an error from occurring in let case...
+  m (Let a:rs) (w:ws) = w == a && m rs ws -- ...ws becomes "" sometimes
+  m (Union r1 r2:rs) w = m (r1:rs) w || m (r2:rs) w
+  m (Cat r1 r2:rs) w = m (r1:r2:rs) w
+  m (Star r:rs) w = m rs w || m (nep r:Star r:rs) w
 
 
 -- Some regular expressions for testing. Also, test them on other solutions
 -- to the exercises of Section 3.2 (as many as you can get).
 
 sigma = ['a', 'b']                -- Alphabet used in all examples below
--- Exercises from 3.2 below
+-- Regular expressions exercises from 3.2 below
 q1 = toRE "b*ab.b.*+*"            -- every a followed by bb
 -- OR -> q1   = toRE "b*ab.b.*.b*.b*ab.b.*+." -- every a followed by bb
 q3 = toRE "a*b*.b*a*.+ab.ba.+.a*b*.b*a*.+." -- at least one a and one b
@@ -320,7 +277,7 @@ q6 = toRE "b*a*+ba.+abb.a.+ab.b.+*.b*." -- no instances of aba
 q7 = toRE "a*b+a*.b*.aab.*+.b*."
 -- even number of a's and an even number of b's.
 q8 = toRE "aa.bb.+ab.a.b.+ab.b.a.+ba.b.a.+ba.a.b.+*"
--- the 4 below were given
+-- Regular expressions examples given in lab 4
 ab   = toRE "aa.bb.+*"            -- every letter is duplicated
 ttla = toRE "ab+*a.ab+.ab+."      -- third to last letter is a
 ena  = toRE "b*a.b*.a.*b*."       -- even number of a's (q2 in 3.2)
@@ -515,3 +472,63 @@ strings n = concat $ [replicateM i sigma | i <- [0..n]]
 -- [([],["","a","b","aa","ab"]),([""],["a","b","aa","ab"]),
 -- (["","a"],["b","aa","ab"]),(["","a","b"],["aa","ab"]),(["","a","b","aa"],["ab"])
 -- ,(["","a","b","aa","ab"],[])]
+
+-- *Main> (match1 Empty "") == (memb (lol "") (lang []))
+-- True
+-- *Main> match1 (Let 'a') "a"
+-- True
+-- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["a"]))
+-- True
+-- *Main> (match1 (Let 'a') "a") == (memb (lol "a") (lang ["ab"]))
+-- False
+-- *Main> match1 (Let 'a') "ba"
+-- False
+-- *Main> match1 (Let 'a') ""
+-- False
+-- *Main> match1 (toRE "a") "a"
+-- True
+-- *Main> match1 (toRE "ab+a+b+") "a"
+-- True
+-- *Main> match1 (toRE "ab+a+b+") "c"
+-- False
+-- *Main> match1 (toRE "ab+a+b+") "b"
+-- True
+-- *Main> match1 (toRE "ab+a+b+") ""
+-- False
+-- *Main> match1 (toRE "ab.c.") "ab"
+-- False
+-- *Main> match1 (toRE "a*") "a"
+-- True
+-- *Main> match1 (toRE "a*") "aa"
+-- True
+-- *Main> match1 (toRE "a*") "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+-- True
+-- *Main> match1 (toRE "a*b*.") ""
+-- True
+-- *Main> match1 (toRE "") ""
+-- *** Exception: lab4.hs:(69,3)-(74,43): Non-exhaustive patterns in function go
+-- *Main> match1 (toRE "a*b*.") "ababababababababa"
+-- False
+-- *Main> match1 (toRE "a*b*.") "ab"
+-- True
+-- *Main> match1 (toRE "a*b*.") "abb"
+-- True
+-- *Main> match1 (toRE "aa.bb.+ab.a.b.+ab.b.a.+ba.b.a.+ba.a.b.+*") "bbababaa"
+-- True
+-- *Main> match1 (q1) "bbababaa"
+-- False
+-- *Main> match1 (q8) "bbababaa"
+-- True
+
+-- *Main> match2 q8 "ababaaa"
+-- False
+-- *Main> match2 q8 "ababaaaa"
+-- True
+-- *Main> match2 q5 "ababaaa"
+-- True
+-- *Main> match2 q5 "a"
+-- True
+-- *Main> w = "ababaaa"
+-- *Main> match1 r w == memb (lol w) (lang_of r)
+-- True
+-- *Main> r =  q8
