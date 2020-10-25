@@ -162,14 +162,34 @@ re2fsm (Union r1 r2) = reduce $ unionFSM (re2fsm r1) (re2fsm r2)
 re2fsm (Cat r1 r2) = reduce $ catFSM (re2fsm r1) (re2fsm r2)
 re2fsm (Star r1) = reduce $ starFSM (re2fsm r1)
 
+---------------RE's from 3.2--------------------
+
+q1 = toRE "b*ab.b.*+*"                        -- every a followed by bb
+-- OR -> q1   = toRE "b*ab.b.*.b*.b*ab.b.*+." -- every a followed by bb
+q3 = toRE "a*b*.b*a*.+ab.ba.+.a*b*.b*a*.+."   -- at least one a and one b
+q4 = toRE "ab.*ba.*+a+b+"                     -- no two adjacent letters
+q5 = toRE "a*ba.bb.a.+a+*."                   -- no instances of bbb
+q6 = toRE "b*a*+ba.+abb.a.+ab.b.+*.b*."       -- no instances of aba
+    -- every instance of aa coming before every instance of bb
+q7 = toRE "a*b+a*.b*.aab.*+.b*." -- even number of a's and an even number of b's
+q8 = toRE "aa.bb.+ab.a.b.+ab.b.a.+ba.b.a.+ba.a.b.+*"
+
+-- Regular expressions examples given in lab 4
+ab = toRE "aa.bb.+*"                          -- every letter is duplicated
+ttla = toRE "ab+*a.ab+.ab+."                  -- third to last letter is a
+ena = toRE "b*a.b*.a.*b*."                    -- even number of a's (q2 in 3.2)
+bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
+
 --------------------------------------------------
 ----------------- TESTING ------------------------
 --------------------------------------------------
 -- FSM test by RE comparison
 -- generic tester when you know the RE
 -- it only compares the first 100 values
--- re_test :: Eq a => FSM a -> RegExp -> Bool
--- re_test fsm re = and [accept1 fsm w | w <- take 100 (lang_of re)]
+
+re_test fsm re = and [accept1 fsm s | re <- take 100 (lang_of re),
+                s <- s10, (lol s) == re] -- not a good test
+
 
 -- *Main> checkFSM emptyFSM
 -- True
