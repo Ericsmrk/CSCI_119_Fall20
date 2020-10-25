@@ -125,12 +125,14 @@ ea = ([0,1], 0, [0], d) where
 
 -- q3 -> at least one a and at least one b
 ala_alb :: FSM
-ala_alb = ([0,1], 0, [1], d) where
-    d _ _ = 1
+ala_alb = ([0,1,2,3,4], 0, [3,4], d) where
+    -- d _ _ = 1
     -- or
-    -- d 0 'a' = 1 ; d 0 'b' = 1
-    -- d 1 'b' = 1 ; d 1 'a' = 1
-
+    d 0 'a' = 1 ; d 0 'b' = 2
+    d 1 'a' = 1 ; d 1 'b' = 3
+    d 2 'a' = 4 ; d 2 'b' = 2
+    d 3 'a' = 4 ; d 3 'b' = 3
+    d 4 'a' = 4 ; d 4 'b' = 3
 
 -- q4 -> no 2 adjacent letters
 no2adj :: FSM
@@ -186,9 +188,12 @@ evenasbs = ([0,1,2,3], 0, [0,2], d) where
 -- FSM test by RE comparison
 -- generic tester when you know the RE
 -- it only compares the first 100 values
-re_test fsm re = and [(accept1 fsm s) | w <- take 100 (lang_of re), s <- s10, (lol s) == w] -- not a good test
 
-old_re_test fsm re = and [accept1 fsm s | re <- take 100 (lang_of re),
+test fsm re = [accept1 fsm s == match1 re s | s <- s10]
+
+new_re_test fsm re = and [accept1 fsm s == match1 re s | s <- s10]
+
+re_test fsm re = and [accept1 fsm s | re <- take 100 (lang_of re),
                 s <- s10, (lol s) == re] -- not a good test
 
 -- when working on this I came up with the generic version
