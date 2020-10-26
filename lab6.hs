@@ -183,13 +183,13 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 --------------------------------------------------
 ----------------- TESTING ------------------------
 --------------------------------------------------
-test fsm re = and [accept1 fsm w == match2 re w | w <- strings 20]
+test  re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 20]
 
 -- FSM test by RE comparison
 -- generic tester when you know the RE
 -- it only compares the first 100 values
-re_test fsm re = and [accept1 fsm s | re <- take 100 (lang_of re),
-                s <- s10, (lol s) == re] -- not a good test
+re_test fsm re = and [accept1 fsm s | w <- take 100 (lang_of re),
+                s <- s10, (lol s) == w] -- not a good test
 
 
 -- *Main> checkFSM emptyFSM
