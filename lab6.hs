@@ -202,7 +202,14 @@ test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 -- True
 -- *Main> test (toRE "ab.ba.+")
 -- True
-
+-- *Main> test (toRE "ab.ba.+ba.b.ab.a.+.")
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaa"
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+-- True
 
 
 
