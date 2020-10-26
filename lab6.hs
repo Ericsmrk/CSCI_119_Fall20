@@ -183,7 +183,7 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 --------------------------------------------------
 ----------------- TESTING ------------------------
 --------------------------------------------------
-test  re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 20]
+test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 20]
 
 -- FSM test by RE comparison
 -- generic tester when you know the RE
