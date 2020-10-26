@@ -189,6 +189,23 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 -- than the I have proved that the FSM is equivalent to the RE.
 test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 
+-- *Main> test Empty
+-- True
+-- *Main> test (toRE "")
+-- *** Exception: lab6.hs:(148,3)-(153,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> test (toRE "@")
+-- True
+-- *Main> test (toRE "ab.")
+-- True
+-- *Main> test (toRE "ab+")
+-- True
+-- *Main> test (toRE "ab.ba.+")
+-- True
+
+
+
+
 -- FSM test by RE comparison
 -- generic tester when you know the RE
 -- it only compares the first 100 values
