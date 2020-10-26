@@ -183,7 +183,11 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 --------------------------------------------------
 ----------------- TESTING ------------------------
 --------------------------------------------------
-test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 20]
+-- This test uses re2fsm to convert the input re into an FSM Int, checks that a
+-- a string is accepted by the fsm and also that the string is within the languages
+-- of the re. If BOTH are true or false for each iteration of the list comprehension
+-- than the I have proved that the FSM is equivalent to the RE.
+test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 
 -- FSM test by RE comparison
 -- generic tester when you know the RE
