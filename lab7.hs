@@ -1,6 +1,7 @@
 -- Lab 7: Convert FSMs to regular expressions
 
 import Data.List
+import Data.Array
 import Control.Monad (replicateM)  -- for strings function below
 
 
@@ -87,7 +88,6 @@ toRE' w = go w [] where
   go ('*':xs) (r:rs) = go xs (Star' r:rs)
   go (x:xs) rs = go xs (Let' x:rs)
 
-
 -- Finite state machines (as records), indexed by the type of their states
 type FSM a = ([a], a, [a], a -> Char -> a)
 
@@ -117,19 +117,19 @@ solve ((l11:l1J) : rows) (l1':lI') = simp x1 : xI where
   -- lI' are the rest of the constants [l2',...,ln']
 
   -- first column [l21, ..., ln1]
-  lI1 =                                                                             [head x| x <- rows]
+  lI1 = [head x| x <- rows]
 
   -- sub-matrix [[l22,...,l2n], ..., [ln2,...,lnn]]
-  lIJ =                                                                             [tail x| x <- rows]
+  lIJ = [tail x| x <- rows]
 
   -- [[l22_bar,...,l2n_bar], ..., [ln2_bar,...,lnn_bar]] computed via (6)
   lIJ_bar = zipWith sixes lI1 lIJ            -- loops for i = 2 .. n
   sixes li1 liJ = zipWith (six li1) l1J liJ  -- loops for j = 2 .. n
-  six li1 l1j lij =                                                                 Union' [Cat' [li1, Star' l11, l1j], lij] -- (using l11)
+  six li1 l1j lij = Union' [Cat' [li1, Star' l11, l1j], lij] -- (using l11)
 
   -- [l2'_bar,..., ln'_bar] computed via (7)
   lI'_bar = zipWith seven lI1 lI'
-  seven li1 li' =                                                                   Union' [Cat' [li1, Star' l11, l1'], li']
+  seven li1 li' = Union' [Cat' [li1, Star' l11, l1'], li']
 
   -- recursively solve the system of size n-1
   xI = solve lIJ_bar lI'_bar
@@ -137,16 +137,18 @@ solve ((l11:l1J) : rows) (l1':lI') = simp x1 : xI where
   -- compute x1 from xI via (5)
   x1 = Cat' [(Star' l11), Union' (zipWith (\i1 i2 -> Cat' [i1, i2]) l1J xI ++ [l1'])]
 
--- Generate a regular SPLE from an FSM via formulas in Theorem 6.5
+-- Generate a regular SPLE from an FSM via formulas in Theorem 6.5 (6.3?)
 toSPLE :: FSM Int -> ([[RegExp']], [RegExp'])
 toSPLE (qs,s,fs,d) = (lIJ, lI') where
 
   -- Construct matrix of coefficients (coef i j = Lij)
   lIJ = [[simp (coef i j) | j <- qs] | i <- qs]
-  coef i j = undefined
+  coef i j = Union' [Cat' [Let' a, One ] | a <- sigma, d i a == j]
 
   -- Construct constants
-  lI' = undefined
+  lI' = [if elem q fs then One else Zero | q <- qs]
+
+  -- if elem fs qs then One else Zero
 
 
 -- Convert an FSM to a RegExp'
@@ -155,9 +157,76 @@ conv m@(_,s,_,_) = simp $ solution !! s where
   (matrix, consts) = toSPLE m
   solution = solve matrix consts
 
+-- This is a test that checks a FSM in the conv function. If true than the
+-- the fsm was checked for acceptance with a list of strings and compared within
+-- results from using match with the re equivalent of the fsm and the same strings.
+fsm_test fsm = let re = fromRE' $ conv fsm in
+              and [accept1 fsm w == match1 re w | w <- strings 10]
 
 -- Test! Test! Test! (and show your tests here)
 
+-- *Main> fsm_test oddbs
+-- True
+-- *Main> fsm_test avoid_aab
+-- True
+-- *Main> fsm_test dups
+-- True
+-- *Main> fsm_test end_ab
+-- True
+
+-- *Main> solve [[Let' 'b', Let' 'a', Zero],[Zero, Let' 'b', Let' 'a'],
+-- [Let' 'a', Zero, Let' 'b']] [Zero, One, Zero] [Union' [Cat' [Star' (Let' 'b')
+-- ,Let' 'a',Star' (Let' 'b')],Cat' [Star' (Let' 'b'),Let' 'a',Star' (Let' 'b'),
+-- Let' 'a',Star' (Union' [Let' 'b',Cat' [Let' 'a',Star' (Let' 'b'),Let' 'a',
+-- Star' (Let' 'b'),Let' 'a']]),Let' 'a',Star' (Let' 'b'),Let' 'a',Star'
+-- (Let' 'b')]],Union' [Cat' [Star' (Let' 'b'),Let' 'a',Star' (Union' [Let' 'b',
+-- Cat' [Let' 'a',Star' (Let' 'b'),Let' 'a',Star' (Let' 'b'),Let' 'a']]),
+-- Let' 'a',Star' (Let' 'b'),Let' 'a',Star' (Let' 'b')],Star' (Let' 'b')],
+-- Cat' [Star' (Union' [Let' 'b',Cat' [Let' 'a',Star' (Let' 'b'),Let' 'a',Star'
+-- (Let' 'b'),Let' 'a']]),Let' 'a',Star' (Let' 'b'),Let' 'a',Star' (Let' 'b')]]
+-- *Main> [r1,r2,r3] = it
+-- *Main> Compact (fromRE' r1)
+-- b*ab*+b*ab*a(b+ab*ab*a)*ab*ab*
+-- *Main> Compact (fromRE' r2)
+-- b*a(b+ab*ab*a)*ab*ab*+b*
+-- *Main> Compact (fromRE' r3)
+-- (b+ab*ab*a)*ab*ab*
+------the above matches the class example from 10/12/20-------
+
+
+
+-----------FSM Examples---------------
+-- Strings with odd number of bs
+oddbs :: FSM Int
+oddbs = ([0,1], 0, [1], d) where
+  d q 'a' = q        -- stay in the same state
+  d q 'b' = 1 - q    -- switch states
+
+-- Strings that do not contain "aab"
+avoid_aab :: FSM Int
+avoid_aab = ([0,1,2,3], 0, [0,1,2], d) where
+  d 0 'a' = 1
+  d 0 'b' = 0
+  d 1 'b' = 0
+  d 1 'a' = 2
+  d 2 'a' = 2
+  d 2 'b' = 3
+  d 3 _ = 3
+
+-- All strings that end in "ab"
+end_ab :: FSM Int
+end_ab = ([0,1,2], 0, [2], d) where
+  d _ 'a' = 1
+  d 0 'b' = 0
+  d 1 'b' = 2
+  d 2 'b' = 0
+
+-- Every letter is duplicated RE = "aa.bb.+*" (ab)
+dups :: FSM Int
+dups = ([0,1,2,3], 0, [0], d) where
+    d 0 'a' = 1 ; d 1 'a' = 0
+    d 0 'b' = 2 ; d 2 'b' = 0
+    d _ _ = 3
 
 
 ---------------- Lab 7 ends here ----------------------------------
@@ -252,3 +321,29 @@ flat_cat rs = fc [] rs where
   fc pr (Cat' rs':rs) = fc (reverse rs' ++ pr) rs
   fc pr (Union' rs':rs) = concat $ map (fc pr . (:rs)) rs'
   fc pr (r:rs) = fc (r:pr) rs
+
+
+---------------Code from lab 6-----------------
+
+-- Splits function from lab 4
+splits :: [a] -> [([a], [a])]
+splits xs = [(t,d) | l <- [0 .. length xs], let t = take l xs, let d = drop l xs]
+
+-- Match function from lab 4
+match1 :: RegExp -> String -> Bool
+match1 Empty _ = False
+match1 (Let a) w = [a] == w
+match1 (Union r1 r2) w = match1 r1 w || match1 r2 w
+match1 (Cat r1 r2) w = or [match1 r1 w1 && match1 r2 w2 | (w1 , w2) <- splits w]
+match1 (Star r) w = let (x:ws) = splits w in
+                    w == [] ||
+                    or [match1 r w1 && match1 (Star r) w2 | (w1 , w2) <- ws]
+
+-- Gives the delta* function (recursive in w) (q is start state)
+dstar :: FSM a -> a -> [Char] -> a
+dstar _ q "" = q
+dstar m@(_, _, _, d) q (w:ws) = dstar m (d q w) ws
+
+-- Machine acceptance, Definition 1 (via delta*)
+accept1 :: Eq a => FSM a -> [Char] -> Bool
+accept1 m@(_, s, fs, _) w = elem (dstar m s w) fs

@@ -184,9 +184,10 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 ----------------- TESTING ------------------------
 --------------------------------------------------
 -- This test uses re2fsm to convert the input re into an FSM Int, checks that a
--- a string is accepted by the fsm and also that the string is within the languages
--- of the re. If BOTH are true or false for each iteration of the list comprehension
--- than the I have proved that the FSM is equivalent to the RE.
+-- a string is accepted by the fsm and also that the string is within the
+-- languages of the re. If BOTH are true or false for each iteration of the list
+-- comprehension than I have proved that the FSM created with re2fsm is
+-- equivalent to the RE.
 test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 
 -- *Main> test Empty
@@ -203,22 +204,12 @@ test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 -- *Main> test (toRE "ab.ba.+")
 -- True
 -- *Main> test (toRE "ab.ba.+ba.b.ab.a.+.")
--- True
--- *Main> accept1 (starFSM (letterFSM 'a')) "aaaa"
--- True
--- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
--- True
--- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
--- True
-
-
 
 -- FSM test by RE comparison
 -- generic tester when you know the RE
 -- it only compares the first 100 values
 re_test fsm re = and [accept1 fsm s | w <- take 100 (lang_of re),
                 s <- s10, (lol s) == w] -- not a good test
-
 
 -- *Main> checkFSM emptyFSM
 -- True
@@ -329,8 +320,16 @@ re_test fsm re = and [accept1 fsm s | w <- take 100 (lang_of re),
 -- False
 -- *Main> checkFSM (starFSM (letterFSM 'a'))
 -- True
-
-
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaa"
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+-- True
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+-- False
+-- *Main> accept1 (starFSM (letterFSM 'a')) "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaba"
+-- False
 
 
 

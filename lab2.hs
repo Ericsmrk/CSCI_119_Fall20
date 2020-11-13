@@ -135,7 +135,6 @@ part bs = nontrivial bs && total bs && disjoint bs
 -- Write a function eq2part that takes an equivalence relation on u as input
 -- and returns the associated partition of u. You can assume that the input is
 -- really an equivalence relation on u.
-
 eq2part :: Reln -> [[Int]]
 eq2part rs = help u where
   help :: [Int] -> [[Int]]

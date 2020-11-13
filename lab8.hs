@@ -12,13 +12,24 @@ sigma = "ab"
 -- M = (states, start, finals, transitions)
 type FSM a = ([a], a, [a], a -> Char -> a)
 
------------- Part 2: FSM construction
+------------ FSM construction ----------------------
 -- Define a machine that accepts exactly the strings with an odd number of b's
 -- (Solution given for illustration)
 oddbs :: FSM Int
 oddbs = ([0,1], 0, [1], d) where
   d q 'a' = q        -- stay in the same state
   d q 'b' = 1 - q    -- switch states
+
+n_oddbs :: NFSM Int
+n_oddbs = ([0,1], [0], [1], d) where
+  d q 'a' = [q]        -- stay in the same state
+  d q 'b' = [1 - q]    -- switch states
+
+e_oddbs :: EFSM Int
+e_oddbs = ([0,1], [0], [1], d, e) where
+  d q 'a' = [q]        -- stay in the same state
+  d q 'b' = [1 - q]    -- switch states
+  e = [(0,0)]
 
 -- Define a machine that accepts exactly the strings that do not contain "aab"
 -- as a substring and test it adequately
@@ -32,6 +43,27 @@ avoid_aab = ([0,1,2,3], 0, [0,1,2], d) where
   d 2 'b' = 3
   d 3 _ = 3
 
+n_avoid_aab :: NFSM Int
+n_avoid_aab = ([0,1,2,3], [0], [0,1,2], d) where
+  d 0 'a' = [1]
+  d 0 'b' = [0]
+  d 1 'b' = [0]
+  d 1 'a' = [2]
+  d 2 'a' = [2]
+  d 2 'b' = [3]
+  d 3 _ = [3]
+
+e_avoid_aab :: EFSM Int
+e_avoid_aab = ([0,1,2,3], [0], [0,1,2], d, e) where
+  e = [(0,0),(0,1),(0,2),(0,3)]
+  d 0 'a' = [1]
+  d 0 'b' = [0]
+  d 1 'b' = [0]
+  d 1 'a' = [2]
+  d 2 'a' = [2]
+  d 2 'b' = [3]
+  d 3 _ = [3]
+
 -- Define a machine that accepts all strings that end in "ab" and test
 end_ab :: FSM Int
 end_ab = ([0,1,2], 0, [2], d) where
@@ -39,6 +71,23 @@ end_ab = ([0,1,2], 0, [2], d) where
   d 0 'b' = 0
   d 1 'b' = 2
   d 2 'b' = 0
+
+-- Define a machine that accepts all strings that end in "ab" and test
+n_end_ab :: NFSM Int
+n_end_ab = ([0,1,2], [0], [2], d) where
+  d _ 'a' = [1]
+  d 0 'b' = [0]
+  d 1 'b' = [2]
+  d 2 'b' = [0]
+
+-- Define a machine that accepts all strings that end in "ab" and test
+e_end_ab :: EFSM Int
+e_end_ab = ([0,1,2], [0], [2], d, e) where
+  e = [(0,0),(1,0),(1,1),(2,0),(2,2)]
+  d _ 'a' = [1]
+  d 0 'b' = [0]
+  d 1 'b' = [2]
+  d 2 'b' = [0]
 
 ---------------- Given functions ----------------
 
@@ -145,39 +194,55 @@ toRE w = toRE' w [] where
 -- Define the operations given in Section 7 of the notes
 
 -- Intersection
-inters :: (Eq a, Eq b) => FSM a -> FSM b -> FSM (a,b) -- (change or to and)
+inters :: (Eq a, Eq b) => FSM a -> FSM b -> FSM (a,b)
 inters (qs1, s1, fs1, d1) (qs2, s2, fs2, d2) = (qs, s, fs, d) where
   qs = qs1 >< qs2
   s  = (s1, s2)
   fs = fs1 >< fs2
   d (q1, q2) a = (d1 q1 a, d2 q2 a)
 
--- Complement only reverse final states
+-- Complement only reverse final states  (machine_bar)
 compl :: Eq a => FSM a -> FSM a
 compl (qs1, s1, fs1, d1) = (qs, s, fs, d) where
   qs = qs1
   s  = s1
-  fs = [ fs | fs <- qs, notElem fs fs1]
+  fs = [fs | fs <- qs, notElem fs fs1]
   d q a = d1 q a
 
--- The one-string and finite languages of Theorem 3.2.
-onestr :: String -> RegExp
-onestr [] = Star Empty
-onestr [x] = Let x
-onestr (x:xs) = Cat (Let x) (onestr xs)
+-- this displays the homo_dir image of an re with substitutions for k
+hd_image re = Compact $ homo_dir k_ab_ba $ toRE re where
+              -- k(a) = "ab" and k(b) = "ba"
+              k_ab_ba l = if l == 'a' then "ab" else "ba"
 
--- Direct homomorphic image: k is a substitution (apply k to letters, get onestr)
+-- Direct homomorphic image: k is a substitution
 homo_dir :: (Char -> String) -> RegExp -> RegExp
 homo_dir k Empty = Empty
-homo_dir k (Let 'a') = onestr (k 'a') -- write a func for k that switches a to [b]
+homo_dir k (Let a) = onestr (k a)
+homo_dir k (Union r1 r2) = Union (homo_dir k r1) (homo_dir k r2)
+homo_dir k (Cat r1 r2) = Cat (homo_dir k r1) (homo_dir k r2)
+homo_dir k (Star r) = Star (homo_dir k r)
+
+-- this displays the homo_inv image of an fsm with substitutions for k
+hi_image fsm = show_fsm m1 where
+                -- k(a) = "ab" and k(b) = "ba"
+                k_ab_ba l = if l == 'a' then "ab" else "ba"
+                m1@(qs, s, fs, d) = homo_inv k_ab_ba fsm
 
 -- Inverse homomorphic image (use delta star)
 homo_inv :: Eq a => (Char -> String) -> FSM a -> FSM a
-homo_inv = undefined
+homo_inv k (qs1, s1, fs1, d1) = (qs, s, fs, d) where
+  qs = qs1
+  s  = s1
+  fs = fs1
+  d q a = star d1 q $ k a
 
 -- Right quotient by a finite language
 quot_right :: Eq a => [String] -> FSM a -> FSM a
-quot_right = undefined
+quot_right l2 (qs1, s1, fs1, d1) = (qs, s, fs, d) where
+  qs = qs1
+  s  = s1
+  fs = [q | q <- qs1, w <- l2, elem (star d1 q w) fs1]
+  d q a = d1 q a
 
 
 ---------------- Part 2: Nondeterministic machines ----------------
@@ -189,16 +254,16 @@ type Trans a = a -> Char -> [a]
 type NFSM a = ([a], [a], [a], Trans a)
 
 -- nap_hat d qs a == normalized list of all transitions possible from qs on a
-nap_hat :: Ord a => Trans a -> [a] -> Char -> [a] -- (trans function is only input, use d*)
-nap_hat = undefined
+nap_hat :: Ord a => Trans a -> [a] -> Char -> [a]
+nap_hat d qs a = norm $ concat [d q a | q <- qs]
 
 -- nap_hat_star d qs w == normalized list of transitions possible from qs on w
 nap_hat_star :: Ord a => Trans a -> [a] -> [Char] -> [a]
-nap_hat_star = undefined
+nap_hat_star d qs w = star (nap_hat d) qs w
 
 -- nacc m w == m accept the string w
 nacc :: Ord a => NFSM a -> [Char] -> Bool
-nacc = undefined
+nacc (_, ss, fs, ds) w = overlap (nap_hat_star ds ss w) fs
 
 
 -- Nondeterministic FSMs with epsilon moves, indexed by their type of state
@@ -207,39 +272,309 @@ type Eps a = [(a, a)]
 type EFSM a = ([a], [a], [a], Trans a, Eps a)
 
 -- Normalized epsilon closure of a set of states (Hint: use uclosure)
-eclose :: Ord a => Eps a -> [a] -> [a] -- 40min in to lec
-eclose = undefined
+eclose :: Ord a => Eps a -> [a] -> [a]
+eclose eps states = uclosure states (\q -> [(qp) |(q, qp) <- eps])
 
 -- eap_has d es qs a == eclosure of transitions possible from qs on a
 eap_hat :: Ord a => (Trans a, Eps a) -> [a] -> Char -> [a]
-eap_hat = undefined
+eap_hat (d, es) qs a = eclose es (norm $ concat [d q a | q <- qs])
+
+eap_hat_star :: Ord a => (Trans a, Eps a) -> [a] -> [Char] -> [a]
+eap_hat_star (d, es) qs w = star (eap_hat (d,es)) qs w
 
 eacc :: Ord a => EFSM a -> [Char] -> Bool
-eacc = undefined
-
-
+eacc (qs, ss, fs, ds, eps) w =
+                        overlap (eap_hat_star (ds, eps) (eclose eps ss) w) fs
 
 ---------------- Part 3: Conversion between machines ----------------
 
 -- Easy conversion from FSM to NFSM (given)
 fsm_to_nfsm :: Eq a => FSM a -> NFSM a
-fsm_to_nfsm = undefined
+fsm_to_nfsm (qs1, s1, fs1, d1) = (qs, s, fs, d) where
+  qs = qs1
+  s  = [s1]
+  fs = fs1
+  d q a = [d1 q a]
 
 
 -- Conversion from NFSM to FSM by the "subset construction"
 nfsm_to_fsm :: Ord a => NFSM a -> FSM [a]
-nfsm_to_fsm = undefined
+nfsm_to_fsm (qs1, s1, fs1, d1) = (qs, s, fs, d) where
+  qs = power qs1
+  s  = s1
+  fs = [x | x <- qs, overlap x fs1]
+  d q a = nap_hat d1 q a
+
 
 
 -- Similar conversion from EFSM to FSM using epsilon closure
 efsm_to_fsm :: Ord a => EFSM a -> FSM [a] -- end of lec
-efsm_to_fsm = undefined
+efsm_to_fsm (qs1, s1, fs1, d1, e1) = (qs, s, fs, d) where
+  qs = power qs1
+  s  = eclose e1 s1
+  fs = [x | x <- qs, overlap x fs1]
+  d q a = eap_hat (d1, e1) q a
 
 
-{- Tests:
+-- Tests:
 
-1. m and fsm_to_nfsm m accept the same strings
-2. m and nfsm_to_fsm m accept the same strings
-3. m and efsm_to_fsm m accept the same strings
+-- 1. m and fsm_to_nfsm m accept the same strings
+test1 fsm = let m = fsm_to_nfsm fsm in
+            and [nacc m s == accept1 fsm s | s <- strings 10]
 
--}
+-- *Main> test1 oddbs
+-- True
+-- *Main> test1 avoid_aab
+-- True
+-- *Main> test1 end_ab
+-- True
+
+-- 2. m and nfsm_to_fsm m accept the same strings
+
+test2 nfsm = let m = nfsm_to_fsm nfsm in
+            and [nacc nfsm s == accept1 m s | s <- strings 10]
+
+-- *Main> test2 n_avoid_aab
+-- True
+-- *Main> test2 n_oddbs
+-- True
+-- *Main> test2 n_oddbs
+-- True
+
+-- 3. m and efsm_to_fsm m accept the same strings
+
+test3 efsm = let m = efsm_to_fsm efsm in
+            and [eacc efsm s == accept1 m s | s <- strings 10]
+
+-- *Main> test3 e_oddbs
+-- True
+-- *Main> test3 e_avoid_aab
+-- True
+-- *Main> test3 e_end_ab
+-- True
+--------------Extra Code-----------
+-- The one-string and finite languages of Theorem 3.2.
+onestr :: String -> RegExp
+onestr [] = Star Empty
+onestr [x] = Let x
+onestr (x:xs) = Cat (Let x) (onestr xs)
+
+-- Gives the delta* function (recursive in w) (q is start state)
+dstar :: FSM a -> a -> [Char] -> a
+dstar _ q "" = q
+dstar m@(_, _, _, d) q (w:ws) = dstar m (d q w) ws
+
+-- Machine acceptance, Definition 1 (via delta*)
+accept1 :: Eq a => FSM a -> [Char] -> Bool
+accept1 m@(_, s, fs, _) w = elem (dstar m s w) fs
+
+-- Use constructions above to get reduced machine associated with regex
+-- Warning: it can take a lot of time/memory to compute these for "big" regex's
+-- We will see much better ways later in the course
+re2fsm :: RegExp -> FSM Int
+re2fsm Empty = emptyFSM
+re2fsm (Let c) = letterFSM c
+re2fsm (Union r1 r2) = reduce $ unionFSM (re2fsm r1) (re2fsm r2)
+re2fsm (Cat r1 r2) = reduce $ catFSM (re2fsm r1) (re2fsm r2)
+re2fsm (Star r1) = reduce $ starFSM (re2fsm r1)
+
+
+-- Machine that accepts the empty language
+emptyFSM :: FSM Int
+emptyFSM = ([0], 0, [], d) where
+  d 0 _ = 0
+
+-- Machine that accepts the language {"a"} where a in sigma
+letterFSM :: Char -> FSM Int
+letterFSM a = ([0,1,2], 0, [1], d) where
+  d q x = if a == x && q == 0 then 1 else 2
+
+-- Machine that accepts the union of the languages accepted by m1 and m2
+unionFSM :: (Eq a, Eq b) => FSM a -> FSM b -> FSM (a, b)
+unionFSM (qs1, s1, fs1, d1) (qs2, s2, fs2, d2) = (qs, s, fs, d) where
+  qs = (><) qs1 qs2
+  s  = (s1, s2)
+  fs = [(q1, q2) | (q1, q2) <- qs, elem q1 fs1 || elem q2 fs2]
+  d (q1, q2) a = (d1 q1 a, d2 q2 a)
+
+-- Machine that accepts the concatenation of the languages accepted by m1 and m2
+catFSM :: (Eq a, Ord b) => FSM a -> FSM b -> FSM (a, [b])
+catFSM (qs1, s1, fs1, d1) (qs2, s2, fs2, d2) = (qs, s, fs, d) where
+  fix q x = norm (if elem q fs1 then (s2:x) else x)
+  qs = [(q1, x) | q1 <- qs1, x <- power qs2, fix q1 x == x]
+  s  = (s1, fix s1 [])
+  fs = [(q, x) | (q, x) <- qs, overlap x fs2]
+  d (q,x) a = let q1' = d1 q a in
+              (q1', fix q1' [d2 q2 a | q2 <- x])
+
+              -- Machine that accepts the Kleene star of the language accepted by m1
+starFSM :: Ord a => FSM a -> FSM [a]
+starFSM (qs1, s1, fs1, d1) = (qs, s, fs, d) where
+  fix x = norm (if overlap x fs1 then s1:x else x)
+  qs = power qs1
+  s  = []
+  fs = union [] [x | x <- qs, overlap x fs1]
+  d x a = if x == [] then fix [d1 s1 a] else fix [d1 x1 a | x1 <- x]
+
+--------------Testing--------------
+
+k_ab_ba l = if l == 'a' then "ab" else "ba" -- k value for testing
+-- works for FSMs
+showT (qs, s, fs, d) = [(q, l, (d q l))| q <- qs, l <- sigma]
+show_trans (qs, s, fs, d) = [d q l| q <- qs, l <- sigma]
+show_fsm m@(qs, s, fs, d) = (qs ,s ,fs ,show_trans m, showT m)
+
+--test that both homo_dir and homo_inv produce opposites (doesn't work)
+-- homo_test re = show_fsm (homo_inv k_ab_ba (re2fsm (toRE re)))
+  --              ==
+    --            show_fsm (re2fsm (homo_dir k_ab_ba (toRE re)))
+
+-------inters------
+-- *Main> (x,y,z,d) = inters oddbs avoid_aab
+-- *Main> accept1 (x,y,z,d) "aab"
+-- False
+-- *Main> accept1 (x,y,z,d) "ab"
+-- True
+-- *Main> accept1 (x,y,z,d) "abb"
+-- False
+-- *Main> accept1 (x,y,z,d) "ababbaba"
+-- False
+-- *Main> accept1 (x,y,z,d) "ababbabab"
+-- True
+-- *Main> (x1,y1,z1,d1) = oddbs
+-- *Main> (x2,y2,z2,d2) = avoid_aab
+-- *Main> x1
+-- [0,1]
+-- *Main> x2
+-- [0,1,2,3]
+-- *Main> x
+-- [(0,0),(0,1),(0,2),(0,3),(1,0),(1,1),(1,2),(1,3)]
+-- *Main> y
+-- (0,0)
+-- *Main> y1
+-- 0
+-- *Main> y2
+-- 0
+-- *Main> z
+-- [(1,0),(1,1),(1,2)]
+-- *Main> z1
+-- [1]
+-- *Main> z2
+-- [0,1,2]
+-- *Main> show_trans $ inters oddbs avoid_aab
+-- [(0,1),(1,0),(0,2),(1,0),(0,2),(1,3),(0,3),(1,3),(1,1),
+--               (0,0),(1,2),(0,0),(1,2),(0,3),(1,3),(0,3)]
+
+--------compl-------
+-- *Main> (x,y,z,d) = compl oddbs
+-- *Main> accept1 (x,y,z,d) "b"
+-- False
+-- *Main> accept1 (x,y,z,d) "bb"
+-- True
+-- *Main> accept1 (x,y,z,d) "bbb"
+-- False
+-- *Main> accept1 (x,y,z,d) "bbbaaaaaaaaaaaaa"
+-- False
+-- *Main> accept1 (x,y,z,d) "bbbaaaaaaaaaaaaaa"
+-- False
+-- *Main> accept1 (x,y,z,d) "bbbaaaaaaaaaaaaaba"
+-- True
+-- *Main> (x1,y1,z1,d1) = oddbs
+-- *Main> x
+-- [0,1]
+-- *Main> x1
+-- [0,1]
+-- *Main> y
+-- 0
+-- *Main> y1
+-- 0
+-- *Main> z
+-- [0]
+-- *Main> z1
+-- [1]
+-- *Main> show_trans (x,y,z,d)
+-- [0,1,1,0]
+-- *Main> show_trans oddbs
+-- [0,1,1,0]
+
+--------homo_dir-------
+---testing function defined above
+-- *Main> hd_image "@"
+-- @
+-- *Main> hd_image ""
+-- *** Exception: lab8.hs:(136,3)-(141,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> hd_image "a"
+-- ab
+-- *Main> hd_image "b"
+-- ba
+-- *Main> hd_image "ab"
+-- *** Exception: lab8.hs:(136,3)-(141,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> hd_image "ab."
+-- abba
+-- *Main> hd_image "ab+"
+-- ab+ba
+-- *Main> hd_image "ab+*"
+-- (ab+ba)*
+-- *Main> hd_image "aab.+*"
+-- (ab+abba)*
+-- *Main> hd_image "aab.+ba.a.b.a.+*"
+-- (ab+abba+baababbaab)*
+-- *Main> hd_image "a*"
+-- (ab)*
+
+-----------homo_inv---------
+-- *Main> hi_image oddbs
+-- ([0,1],0,[1],[1,1,0,0],[(0,'a',1),(0,'b',1),(1,'a',0),(1,'b',0)])
+-- *Main> show_fsm oddbs
+-- ([0,1],0,[1],[0,1,1,0],[(0,'a',0),(0,'b',1),(1,'a',1),(1,'b',0)])
+-- *Main> hi_image avoid_aab
+-- ([0,1,2,3],0,[0,1,2],[0,1,3,1,3,3,3,3],[(0,'a',0),(0,'b',1),(1,'a',3),(1,'b',1),
+-- (2,'a',3),(2,'b',3),(3,'a',3),(3,'b',3)])
+-- *Main> show_fsm avoid_aab
+-- ([0,1,2,3],0,[0,1,2],[1,0,2,0,2,3,3,3],[(0,'a',1),(0,'b',0),(1,'a',2),(1,'b',0),
+-- (2,'a',2),(2,'b',3),(3,'a',3),(3,'b',3)])
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "b"))) "ba"
+-- False
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "b"))) ""
+-- False
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "ba."))) ""
+-- False
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "ba."))) "b"
+-- True
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "ab."))) "a"
+-- True
+-- *Main> accept1 (homo_inv k (re2fsm (toRE "ab.b.a."))) "ab"
+-- True
+
+---------quot_right--------------
+-- only final state is 0 which means empty string is only possibility
+-- *Main> show_fsm $ quot_right ["a"] (re2fsm (toRE "a"))
+-- ([0,1,2],0,[0],[1,2,2,2,2,2],[(0,'a',1),(0,'b',2),(1,'a',2),(1,'b',2),(2,'a',2),(2,'b',2)])
+
+-- *Main> show_fsm $ quot_right [""] (re2fsm (toRE "a")) --fs is 1 so only a in string
+-- ([0,1,2],0,[1],[1,2,2,2,2,2],[(0,'a',1),(0,'b',2),(1,'a',2),(1,'b',2),(2,'a',2),(2,'b',2)])
+-- *Main> show_fsm $ quot_right [""] (re2fsm (toRE "b")) --fs is 1 so only b in string
+-- ([0,1,2],0,[1],[2,1,2,2,2,2],[(0,'a',2),(0,'b',1),(1,'a',2),(1,'b',2),(2,'a',2),(2,'b',2)])
+
+--------fsm_to_nfsm------------
+-- *Main> show_fsm $ fsm_to_nfsm oddbs
+-- ([0,1],[0],[1],[[0],[1],[1],[0]],[(0,'a',[0]),(0,'b',[1]),(1,'a',[1]),(1,'b',[0])])
+-- *Main> show_fsm oddbs
+-- ([0,1],0,[1],[0,1,1,0],[(0,'a',0),(0,'b',1),(1,'a',1),(1,'b',0)])
+-- *Main> showT oddbs
+-- [(0,'a',0),(0,'b',1),(1,'a',1),(1,'b',0)]
+-- *Main> showT $ fsm_to_nfsm oddbs
+-- [(0,'a',[0]),(0,'b',[1]),(1,'a',[1]),(1,'b',[0])]
+-- *Main> test1 oddbs
+-- True
+-- *Main> test1 avoid_aab
+-- True
+-- *Main> test1 end_ab
+-- True
+
+--------nfsm_to_fsm------------
+--  above
+--------esm_to_fsm------------
+--  above
