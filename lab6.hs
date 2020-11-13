@@ -183,6 +183,7 @@ bb1  = toRE "aba.+*b.b.aab.+*."               -- contains bb exactly once
 --------------------------------------------------
 ----------------- TESTING ------------------------
 --------------------------------------------------
+<<<<<<< Updated upstream
 -- This test uses re2fsm to convert the input re into an FSM Int, checks that a
 -- a string is accepted by the fsm and also that the string is within the
 -- languages of the re. If BOTH are true or false for each iteration of the list
@@ -204,6 +205,41 @@ test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 8]
 -- *Main> test (toRE "ab.ba.+")
 -- True
 -- *Main> test (toRE "ab.ba.+ba.b.ab.a.+.")
+=======
+test re = and [accept1 (re2fsm re) w == match2 re w | w <- strings 6]
+
+*Main> test (Let 'a')
+True
+*Main> test Empty
+True
+*Main> test (toRE "")
+*** Exception: lab6.hs:(148,3)-(153,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> test (toRE "@")
+-- True
+-- *Main> test (toRE "a")
+-- True
+-- *Main> test (toRE "ab")
+-- *** Exception: lab6.hs:(148,3)-(153,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> test (toRE "ab.")
+-- True
+-- *Main> test (toRE "ab.c")
+-- *** Exception: lab6.hs:(148,3)-(153,39): Non-exhaustive patterns in function toRE'
+
+-- *Main> test (toRE "ab.c.")
+-- True
+-- *Main> test q1
+-- False
+-- *Main> test (toRE "ab+")
+-- True
+-- *Main> test (toRE "ab.b+")
+-- True
+
+
+
+
+>>>>>>> Stashed changes
 
 -- FSM test by RE comparison
 -- generic tester when you know the RE
